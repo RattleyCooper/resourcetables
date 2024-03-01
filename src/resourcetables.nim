@@ -2,7 +2,7 @@
 ## 
 #
 
-import std/[os, macros, tables]
+import std/[os, macros, tables, strutils]
 
 type 
   ResourceTable* = Table[string, string]
@@ -36,21 +36,16 @@ macro resources*(u: untyped): untyped =
   examine.add(quote do: `pident`)
   result = examine
 
-macro embed*(directory: static[string]): untyped =
+proc embed*(directory: string): ResourceTable =
   ## Embed an entire directory into a ResourceTable.
   ## 
   ## example:
   ##   const assets: ResourceTable = embed("assets")
   ##   echo assets["assets/someImg.png"]
   #
-  var examine = newStmtList()
-  examine.add quote do:
-    block:
-      var pages: ResourceTable
-      for fd in walkDir(`directory`):
-        if fd.kind == pcFile:
-          var p = fd.path.replace("\\", "/")
-          pages[p] = staticRead(p)
-      pages
-    
-  result = examine
+  var pages: ResourceTable
+  for fd in walkDir(directory):
+    if fd.kind == pcFile:
+      var p = fd.path.replace("\\", "/")
+      pages[p] = staticRead(p)
+  pages
