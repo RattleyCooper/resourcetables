@@ -3,7 +3,7 @@
 
 ## Install
 
-Download, unzip, navigate to the directory and run `nimble install`
+Download, unzip, navigate to the src directory and copy the `resourcetables.nim` file into your project.  For some reason the macros can't open files when the script is imported from a different directory.
 
 ## Examples
 
