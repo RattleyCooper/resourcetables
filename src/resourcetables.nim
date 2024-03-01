@@ -44,14 +44,13 @@ macro embed*(directory: static[string]): untyped =
   ##   echo assets["assets/someImg.png"]
   #
   var examine = newStmtList()
-  var pident = ident("pages")
   examine.add quote do:
     block:
-      var `pident`: ResourceTable
+      var pages: ResourceTable
       for fd in walkDir(`directory`):
         if fd.kind == pcFile:
           var p = fd.path.replace("\\", "/")
-          `pident`[p] = staticRead(p)
-      `pident`
+          pages[p] = staticRead(p)
+      pages
     
   result = examine
