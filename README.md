@@ -1,5 +1,5 @@
 # resourcetables
- Super simple compile time embedded resources.
+ Super simple compile time embedded resources.  Made for handling assets for my website run with [mummy](https://github.com/guzba/mummy), since it wants resourcse available at compile time.
 
 ## Install
 
