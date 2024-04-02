@@ -4,6 +4,8 @@
 
 import std/[os, macros, tables, strutils, httpclient]
 
+export tables
+
 type 
   ResourceTable* = Table[string, string]
 
