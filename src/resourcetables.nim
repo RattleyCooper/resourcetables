@@ -73,6 +73,134 @@ proc embed*(directory: string): ResourceTable =
     echo pages.repr      
   pages
 
+macro remote*(tableName: static[string], x: untyped): untyped =
+  ## Create a block of remote filepaths and the files will get 
+  ## downloaded into a table that's identified by the name 
+  ## that was passed to `remote`.
+  ## 
+  ## Unlike embed, this is executed at runtime and includes
+  ## features to aid with saving the files and 
+  ## 
+  ## Example:
+  ## 
+  ##    remote("data"):
+  ##      # Store resulting data using the key "gF1bsWr.jpeg"
+  ##      "https://i.imgur.com/gF1bsWr.jpeg"
+  ## 
+  ##      # Save resulting data to "new.jpeg"
+  ##      "https://i.imgur.com/gF1bsWr.jpeg" -> "new.jpeg"
+  ## 
+  ##      # Use "new.jpeg" as the key in the `data` table
+  ##      "https://i.imgur.com/gF1bsWr.jpeg" <- "new.jpeg"
+  ## 
+  ##      # Save data to "new.jpeg" and use "new.jpeg" as 
+  ##      # the key in the `data` table.
+  ##      "https://i.imgur.com/gF1bsWr.jpeg" <-> "new.jpeg"   
+  ## 
+  ##    discard data["gF1bsWr.jpeg"]
+  ##    discard data["new.jpeg"]
+  ## 
+
+  result = newStmtList()
+  var tableDef = newStmtList()
+  let rdent = ident("r")
+  let cdent = ident("c")
+  tableDef.add quote do:
+    var `cdent` = newHttpClient()
+    var `rdent`: ResourceTable
+
+  # Add static reads to table
+  for l in x:
+    if l.kind == nnkTripleStrLit:   
+      tableDef.add quote do:
+        `rdent`[`l`] = `cdent`.getContent(`l`)
+    elif l.kind == nnkStrLit:
+      tableDef.add quote do:
+        var n = block:
+          if `l`.contains("/"):
+            `l`.split("/")[^1]
+          else:
+            `l`
+        `rdent`[n] = `cdent`.getContent(`l`)
+    elif l.kind == nnkInfix:
+      let id = l[0] # ident ->
+      let cl = l[1] # content link
+      let mp = l[2] # secondary
+
+      case $id
+      of "<->":
+        # Get the data and save it to the path, use filepath as key.
+        tableDef.add quote do:
+          var n = block:
+            if `cl`.contains("/"):
+              `cl`.split("/")[^1]
+            else:
+              `cl`
+          var success = true
+          try:
+            `rdent`[`mp`] = `cdent`.getContent(`cl`)
+          except:
+            echo "Failed to download " & `cl`
+            success = false
+          if success:
+            var f: File
+            if not f.open(`mp`, fmWrite):
+              echo "Couldn't open file for writing: " & `mp`
+            f.write(`rdent`[`mp`])
+            f.close()
+      of "<-":
+        # Get the data and rewrite the key in the table.
+        tableDef.add quote do:
+          var n = block:
+            if `cl`.contains("/"):
+              `cl`.split("/")[^1]
+            else:
+              `cl`
+          var success = true
+          try:
+            `rdent`[`mp`] = `cdent`.getContent(`cl`)
+          except:
+            echo "Failed to download " & `cl`
+            `rdent`[`mp`] = ""
+      of "->":
+        # Get the data and save it to the path.
+        tableDef.add quote do:
+          var n = block:
+            if `cl`.contains("/"):
+              `cl`.split("/")[^1]
+            else:
+              `cl`
+          var success = true
+          try:
+            `rdent`[n] = `cdent`.getContent(`cl`)
+          except:
+            echo "Failed to download " & `cl`
+            success = false
+          if success:
+            var f: File
+            if not f.open(`mp`, fmWrite):
+              echo "Couldn't open file for writing: " & `mp`
+            f.write(`rdent`[n])
+            f.close()
+      else:
+        echo $id, " is not a supported infix for `remote`."
+        echo "Skipping " & $cl & " " & $id & " " & $mp
+        discard
+
+  tableDef.add quote do:  
+    `cdent`.close()
+  tableDef.add quote do:
+    `rdent`
+
+  let blockStmt = nnkBlockStmt.newTree(
+    newEmptyNode(), tableDef
+  )
+  let constDef = nnkIdentDefs.newTree(
+    ident(tableName), newEmptyNode(), blockStmt
+  )
+  result.add nnkVarSection.newTree(constDef)
+  when defined(debug):
+    echo result.repr
 
 macro resources*(u: untyped): untyped =
   ## Deprecated. Use embed(tableName):

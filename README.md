@@ -1,5 +1,5 @@
 # resourcetables
- Super simple compile time embedded resources.
+ Super simple compile time embedded resources, and remote runtime resources.
 
 ## Install
 
@@ -24,4 +24,20 @@ embed("specificRes"):
 specificRes["file.txt]
 specificRes["other/stuff.png]
 
+# Fetch remote resources at runtime. 3 infix operators
+# are available for saving data and rewriting keys.
+
+remote("online"):
+  # Store resulting data using the key "gF1bsWr.jpeg"
+  "https://i.imgur.com/gF1bsWr.jpeg"
+
+  # Save resulting data to "new.jpeg"
+  "https://i.imgur.com/gF1bsWr.jpeg" -> "new.jpeg"
+
+  # Use "new.jpeg" as the key in the `online` table
+  "https://i.imgur.com/gF1bsWr.jpeg" <- "new.jpeg"
+
+  # Save data to "new.jpeg" and use "new.jpeg" as 
+  # the key in the `online` table.
+  "https://i.imgur.com/gF1bsWr.jpeg" <-> "new.jpeg"   
 ```
