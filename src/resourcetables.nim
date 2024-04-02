@@ -26,7 +26,6 @@ macro embed*(tableName: static[string], x: untyped): untyped =
   result = newStmtList()
   var tableDef = newStmtList()
   let rdent = ident("r")
-  let ndent = ident("name")
   tableDef.add quote do:
     var `rdent`: ResourceTable
 
