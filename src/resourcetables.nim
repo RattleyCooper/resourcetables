@@ -2,7 +2,7 @@
 ## 
 #
 
-import std/[os, macros, tables, strutils]
+import std/[os, macros, tables, strutils, httpclient]
 
 type 
   ResourceTable* = Table[string, string]
