@@ -1,5 +1,5 @@
 # resourcetables
- Super simple compile time embedded resources, and remote runtime resources.
+ Super simple compile time embedded resources, and remote runtime resources. Useful if you're trying to ship an application and want to create an offline or online installer.
 
 ## Install
 
@@ -10,22 +10,22 @@ Download, unzip, navigate to the src directory and copy the `resourcetables.nim`
 ```nim
 import resourcetables
 
-# Embed an entire directory
+# Embed an entire directory at compile time
 const assets = embed("asset-folder")
 echo assets["some-file.txt"]
 
-# Embed specific resources
+# Embed specific resources at compile time
 embed("specificRes"):
   "another/file.txt"
   # use triple quoted string to retain full path
   """other/stuff.png"""  
 
-# Access resources
+# Access embedded resources
 specificRes["file.txt]
 specificRes["other/stuff.png]
 
 # Fetch remote resources at runtime. 3 infix operators
-# are available for saving data and rewriting keys.
+# are available for saving data and/or rewriting keys.
 
 remote("online"):
   # Store resulting data using the key "gF1bsWr.jpeg"
