@@ -14,10 +14,11 @@ proc extract*(data: ResourceTable, location: string = "") =
     if not dirExists(location):
       createDir(location)
   var nloc = location
-  if location[^1] == '\\':
-    nloc = location & "/"
-  if location[^1] != '/':
-    nloc = location & "/"
+  if location != "":
+    if location[^1] == '\\':
+      nloc = location & "/"
+    if location[^1] != '/':
+      nloc = location & "/"
 
   for k, v in data.pairs:
     var f: File
