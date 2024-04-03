@@ -11,11 +11,10 @@ type
 
 proc extract*(data: ResourceTable) =
   for k, v in data.pairs:
-    if not fileExists(data[k]):
-      var f: File
-      discard f.open(k, fmWrite)
-      f.write(v)
-      f.close()
+    var f: File
+    discard f.open(k, fmWrite)
+    f.write(v)
+    f.close()
 
 macro embed*(tableName: static[string], x: untyped): untyped =
   ## Create a block of filepaths and the files will get embedded 
