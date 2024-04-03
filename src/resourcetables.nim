@@ -9,10 +9,10 @@ export tables
 type 
   ResourceTable* = Table[string, string]
 
-proc extract*(data: ResourceTable) =
+proc extract*(data: ResourceTable, location: string = "") =
   for k, v in data.pairs:
     var f: File
-    discard f.open(k, fmWrite)
+    discard f.open(location & k, fmWrite)
     f.write(v)
     f.close()
 
