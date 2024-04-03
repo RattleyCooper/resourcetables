@@ -10,6 +10,9 @@ type
   ResourceTable* = Table[string, string]
 
 proc extract*(data: ResourceTable, location: string = "") =
+  if location != "":
+    if not dirExists(location):
+      createDir(location)
   for k, v in data.pairs:
     var f: File
     discard f.open(location & k, fmWrite)
