@@ -9,6 +9,14 @@ export tables
 type 
   ResourceTable* = Table[string, string]
 
+proc extract*(data: ResourceTable) =
+  for k, v in data.pairs:
+    if not fileExists(data[k]):
+      var f: File
+      discard f.open(k, fmWrite)
+      f.write(v)
+      f.close()
+
 macro embed*(tableName: static[string], x: untyped): untyped =
   ## Create a block of filepaths and the files will get embedded 
   ## into the executable in a table that's identified by the name 
