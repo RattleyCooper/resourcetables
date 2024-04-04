@@ -41,3 +41,27 @@ remote("online"):
   # the key in the `online` table.
   "https://i.imgur.com/gF1bsWr.jpeg" <-> "new.jpeg"   
 ```
+
+# Creating an Installer
+
+```nim
+# Embed our game files into the binary at compile time
+# and extract them when the binary is executed.
+
+import resourcetables
+
+
+# Compile-time
+embed("data"):
+  "D:/Code/Nim/playground/nicopg/SDL2.dll"
+  "D:/Code/Nim/playground/nicopg/conway.exe"
+
+embed("assets"):
+  "D:/Code/Nim/playground/nicopg/assets/font.png"
+  "D:/Code/Nim/playground/nicopg/assets/font.png.dat"
+  "D:/Code/Nim/playground/nicopg/assets/icon.png"
+
+# Runtime
+data.extract()
+assets.extract("assets")
+```
