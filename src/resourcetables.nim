@@ -3,13 +3,16 @@
 #
 
 import std/[os, macros, tables, strutils, httpclient]
-
+import zippy
 export tables
 
 type 
   ResourceTable* = Table[string, string]
 
-proc extract*(data: ResourceTable, location: string = "") =
+proc staticCompressFile*(fpath: string): string =
+  staticExec("compressy --c:" & fpath)
+
+proc extract*(data: ResourceTable, location: string = "", compressed: bool = false) =
   if location != "":
     if not dirExists(location):
       createDir(location)
@@ -23,8 +26,14 @@ proc extract*(data: ResourceTable, location: string = "") =
   for k, v in data.pairs:
     var f: File
     discard f.open(nloc & k, fmWrite)
-    f.write(v)
+    if compressed:
+      f.write(v.uncompress())
+    else:
+      f.write(v)
     f.close()
+
+proc uncompress*(data: ResourceTable, location: string = "") =
+  data.extract(location, true)
 
 macro embed*(tableName: static[string], x: untyped): untyped =
   ## Create a block of filepaths and the files will get embedded 
@@ -76,7 +85,57 @@ macro embed*(tableName: static[string], x: untyped): untyped =
   when defined(debug):
     echo result.repr
 
-proc embed*(directory: string): ResourceTable =
+macro staticCompress*(tableName: static[string], x: untyped): untyped =
+  ## Create a block of filepaths and the files will get embedded 
+  ## into the executable in a table that's identified by the name 
+  ## that was passed to `embed`. Use triple quoted strings to
+  ## retain the full path in the resulting ResourceTable.
+  ## 
+  ## Example:
+  ## 
+  ##    embed("data"):
+  ##      "C:/somefile.txt"
+  ##      """C:/otherfile.txt"""
+  ##    
+  ##    discard data["somefile.txt"]
+  ##    discard data["C:/otherfile.txt"]
+  ## 
+
+  result = newStmtList()
+  var tableDef = newStmtList()
+  let rdent = ident("r")
+  tableDef.add quote do:
+    var `rdent`: ResourceTable
+
+  # Add static compresses to table
+  for l in x:
+    if l.kind == nnkTripleStrLit:   
+      tableDef.add quote do:
+        `rdent`[`l`] = staticCompressFile(`l`)
+    elif l.kind == nnkStrLit:
+      tableDef.add quote do:
+        var n = block:
+          if `l`.contains("/"):
+            `l`.split("/")[^1]
+          elif `l`.contains("\\"):
+            `l`.split("\\")[^1]
+          else:
+            `l`
+        `rdent`[n] = staticCompressFile(`l`)
+  tableDef.add quote do:
+    `rdent`
+
+  let blockStmt = nnkBlockStmt.newTree(
+    newEmptyNode(), tableDef
+  )
+  let constDef = nnkConstDef.newTree(
+    ident(tableName), newEmptyNode(), blockStmt
+  )
+  result.add nnkConstSection.newTree(constDef)
+  when defined(debug):
+    echo result.repr
+
+proc embed*(directory: string, compress: bool = false): ResourceTable =
   ## Embed an entire directory into a ResourceTable.
   ## 
   ## example:
@@ -87,10 +146,16 @@ proc embed*(directory: string): ResourceTable =
   for fd in walkDir(directory):
     if fd.kind == pcFile:
       var p = fd.path.replace("\\", "/")
-      pages[p] = staticRead(p)
+      if compress:
+        pages[p] = staticCompressFile(p)
+      else:
+        pages[p] = staticRead(p)
   when defined(debug):
     echo pages.repr      
   pages
+
+proc staticCompress*(directory: string): ResourceTable =
+  embed(directory, true)
 
 macro remote*(tableName: static[string], x: untyped): untyped =
   ## Create a block of remote filepaths and the files will get 
