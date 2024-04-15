@@ -14,6 +14,15 @@ import resourcetables
 const assets = embed("asset-folder")
 echo assets["some-file.txt"]
 
+# Compress directory
+const compressedAssets = staticCompress("asset-folder")
+
+# uncompress & extract at runtime
+compressedAssets.uncompress()
+
+# if you have zippy imported and don't need to extract
+let fileContents = compressedAssets["some-file.txt].uncompress()
+
 # Embed specific resources at compile time
 embed("specificRes"):
   "another/file.txt"
