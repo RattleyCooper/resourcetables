@@ -24,6 +24,8 @@ compressedAssets.uncompress()
 let fileContents = compressedAssets["some-file.txt].uncompress()
 
 # Embed specific resources at compile time
+# You could also use staticCompress("specificRes"): 
+# if you want to compress specific files.
 embed("specificRes"):
   "another/file.txt"
   # use triple quoted string to retain full path
