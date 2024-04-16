@@ -7,7 +7,6 @@ proc validateValue(value: string, msg: string) =
     echo msg
     quit QuitFailure
 
-
 var p = initOptParser()
 while true:
   p.next()
@@ -21,15 +20,19 @@ while true:
       if not f.open(p.val, fmRead):
         echo "Could not read ", p.val
         quit QuitFailure
-      stdout.writeLine f.readAll().compress()
+      var outf: File
+      discard outf.open("_compressed_temp", fmWrite)
+      var fdat = f.readAll()
+      f.close()
+      outf.write fdat.compress()
+      outf.close()
     of "uncompress", "u":
       p.val.validateValue("Supply a file to uncompress with --uncompress:/path/to/file")
       var f: File
       if not f.open(p.val, fmRead):
         echo "Could not read ", p.val
         quit QuitFailure
-      stdout.writeLine f.readAll().compress()
+      stdout.write f.readAll().compress()
     else:
-      echo """Compressy can compress/uncompress files.
-      """
+      discard
   else: discard
