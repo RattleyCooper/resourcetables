@@ -9,8 +9,12 @@ export tables
 type 
   ResourceTable* = Table[string, string]
 
-proc staticCompressFile*(fpath: string): string =
-  staticExec("compressy --c:" & fpath)
+proc staticCompressFile*(fpath: string) {.compileTime.} =
+  echo "compressy --compress:\"" & fpath & "\""
+  discard staticExec("compressy --compress:\"" & fpath & "\"")
+
+proc cleanUp*() =
+  removeFile("_compressed_temp")
 
 proc extract*(data: ResourceTable, location: string = "", compressed: bool = false) =
   if location != "":
@@ -24,8 +28,10 @@ proc extract*(data: ResourceTable, location: string = "", compressed: bool = fal
       nloc = location & "/"
 
   for k, v in data.pairs:
+    let nk = k.split("/")[^1]
+    echo "Extracting ", nloc & nk
     var f: File
-    discard f.open(nloc & k, fmWrite)
+    discard f.open(nloc & nk, fmWrite)
     if compressed:
       f.write(v.uncompress())
     else:
@@ -111,7 +117,8 @@ macro staticCompress*(tableName: static[string], x: untyped): untyped =
   for l in x:
     if l.kind == nnkTripleStrLit:   
       tableDef.add quote do:
-        `rdent`[`l`] = staticCompressFile(`l`)
+        staticCompressFile(`l`)
+        `rdent`[`l`] = staticRead("_compressed_temp")
     elif l.kind == nnkStrLit:
       tableDef.add quote do:
         var n = block:
@@ -121,7 +128,8 @@ macro staticCompress*(tableName: static[string], x: untyped): untyped =
             `l`.split("\\")[^1]
           else:
             `l`
-        `rdent`[n] = staticCompressFile(`l`)
+        staticCompressFile(`l`)
+        `rdent`[n] = staticRead("_compressed_temp")
   tableDef.add quote do:
     `rdent`
 
@@ -147,7 +155,8 @@ proc embed*(directory: string, compress: bool = false): ResourceTable =
     if fd.kind == pcFile:
       var p = fd.path.replace("\\", "/")
       if compress:
-        pages[p] = staticCompressFile(p)
+        staticCompressFile(p)
+        pages[p] = staticRead("_compressed_temp")
       else:
         pages[p] = staticRead(p)
   when defined(debug):
